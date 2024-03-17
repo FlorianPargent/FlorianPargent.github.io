@@ -1,0 +1,6 @@
+---
+title: "Florian Pargents personal website"
+author: "Florian Pargent"
+---
+
+This is a placeholder for my personal website.
