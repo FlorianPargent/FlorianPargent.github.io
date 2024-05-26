@@ -1,6 +1,32 @@
 ---
-title: "Florian Pargents personal website"
-author: "Florian Pargent"
+title: "Florian Pargent"
+about:
+  template: trestles
+  id: about
+  image: portrait_window.png
+  links:
+    - text: "{{< ai orcid >}}"
+      href: https://orcid.org/0000-0002-2388-553X
+    - text: "{{< ai google-scholar >}}"
+      href: https://scholar.google.com/citations?user=uBJQXBkAAAAJ&hl=de&oi=ao
+    - text: "{{< ai osf >}}"
+      href: https://osf.io/hn6se/
+    - icon: github
+      href: https://github.com/FlorianPargent
 ---
 
-This is a placeholder for my personal website.
+:::{#about}
+
+I am a **psychologist and statistician** who teaches statistical methods, research methods, questionnaire development, and assessment to psychology students at **LMU Munich**. In my research, I try to introduce sophisticated statistical methods to psychological researchers and use these methods in applied work. I try my best to publish reproducible analysis code, provide or use open data, and convince my co-authors to publish preprints and choose journals with more sustainable open access policies.
+
+My main **research interests** lie in the following areas:
+
+- (Bayesian) Generative Modeling
+- (Bayesian) Item Response Theory
+- (Bayesian) Decision Theory
+- Predictive Modeling and Machine Learning
+- Questionnaire Development
+- Response Styles in Questionnaires
+- Applied Research
+:::
+

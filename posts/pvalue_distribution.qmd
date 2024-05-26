@@ -1,0 +1,93 @@
+---
+title: "Intuition on why the p-value is uniformly distributed if the null hypothesis is true"
+description: "Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true. So I hacked up a small visualization."
+date: 2024-05-19
+categories:
+  - p-value
+  - statistical literacy
+  - teaching
+draft: true
+---
+
+:::{.callout-tip}
+# In this post
+
+Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true.
+So I hacked up a small visualization.
+
+:::
+
+## Convince ourselves that the p-value is uniformly distributed under the null hypothesis
+
+First lets think about the quickest way to convince ourselves that the p-value is in fact uniformly distributed:
+
+1. Assume we have a test statistic, that is t-distributed under $H_0$. So lets sample same test statistics and plot their distribution:
+
+```{r}
+#| indent: "   "
+n <- 10000
+t_stat <- rt(n, df = 10)
+hist(t_stat)
+```
+
+2. For a left-sided t-test with t-distributed test statistic, the p-value is computed with `pt` and we can clearly see, that these p-values are uniformly distributed.
+
+```{r}
+#| indent: "   "
+p_value <- pt(t_stat, df = 10)
+hist(p_value)
+```
+
+## Build some intuition where the uniform distribution of the p-value comes from
+
+To build intuition on why the p-value is uniformly distributed under the null hypothesis, we look at the following graphic ^[I have used `df = 1` here for pedagogical reasons.]:
+
+```{r}
+#| code-fold: true
+
+par(mfrow = c(2, 1), mar = c(4, 4, 1, 1))
+
+# t-distribution with df = 1
+
+curve(pt(x, df = 1), xlab = "", ylab = "p-value", ylim = c(0,1), xlim = c(-7, 7))
+y_values <- seq(0.05, 0.95, by = 0.05)
+x_values <- qt(y_values, df = 1)
+segments(x_values, rep(-0.5, length(x_values)), x_values, y_values, col = "red", lty = 2)
+segments(x_values, y_values, rep(-7.5, length(y_values)), y_values, col = "blue", lty = 2)
+axis(side = 1, col.axis = "red")
+axis(side = 2, col.axis = "blue")
+
+curve(dt(x, df = 1), xlab = "test statistic", ylab = "density", xlim = c(-7, 7))
+abline(v = x_values, col = "red", lty = 2)
+axis(side = 1, col.axis = "red")
+```
+Per definition, a left-sided p-value computes the ratio of test statistics that would fall below the currently observed value of the test statistic, always assuming $H_0$ is indeed true. On the top left side in we have divided the range of the p-value between 0 and 1 into equal <span style="color:blue;">blue</span> intervals of length 0.05 ^[We could also use fine or coarser grids.].
+Per definition, between two blue lines will fall 5% percent of values from the underlying test statistics.
+To achieve this equal percentage everywhere, the distribution function in the upper plot has to "collect" test statistics from a larger <span style="color:red;">red</span> interval on the bottom axis, when we move away from the mean.
+Close to the mean, we observe more values of the test statistic (as indicated by the density function in the bottom plot) so the interval that makes up 5% of the whole distribution will be small.
+Said differently, the p-value stretches the range of the test statistics into equal intervals.
+This can best be seen with the largest red interval in the bottom left.
+Because test statistics are so rarely observed so far away from the mean, we have to collect values from a very wide range to collect 5% of values for the test statistic.
+
+::: {.callout-note}
+The technical reason for why the p-value is uniformly distributed under the null hypothesis, is the so-called [probability integral transform](https://en.wikipedia.org/wiki/Probability_integral_transform).
+From Wikipedia:
+
+>Suppose that a random variable $X$ has a continuous distribution for which the cumulative distribution function (CDF) is $F_X$. Then the random variable $Y$ defined as
+
+> $Y := F_X(X)$
+
+>has a standard uniform distribution.
+
+In our case, $Y$ is the p-value and $X$ is the test statistic.
+:::
+
+
+## Imagined animation
+
+Perhaps at some point I will update the ugly plots and build a small animation:
+
+- Imagine how it would look like to continously sample test statistics at the bottom of the lower plot. Most points would appear close to the middle but, we would also get rare points further outside.
+- Imagine that each point would fly upwards within the red corridor until it hits the curve of the distribution function in the upper plot and then fly left in within the corresponding blue corridor.
+- Image that all incoming points are collected on the left side of the upper plot and are used to continuously update a histogram with the blue corridor as bars.
+

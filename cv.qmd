@@ -1,0 +1,17 @@
+---
+---
+
+**At the moment, I do not have a nicely formatted CV but only a collection of links where you can find some information on me and my work...**
+
+- You can learn more about my academic background on [Orcid](https://orcid.org/0000-0002-2388-553X)
+and my [webpage at LMU Munich](https://www.psy.lmu.de/pm/personen/lehrstuhlmitarbeiter/pargent/index.html).
+
+- My publications are listed on [Google Scholar](https://scholar.google.com/citations?user=uBJQXBkAAAAJ&hl=de&oi=ao).
+
+- I provide reproducible code and materials for my work and links to preprints on the [OSF](https://osf.io/hn6se/) and [Github](https://github.com/FlorianPargent).
+
+- For most courses I teach at LMU Munich, our group provides the materials as [Open Educational Resources](https://www.oer.psy.lmu.de/) online (in German). 
+
+- I keep a [list of my talks and workshops](https://osf.io/2jrmu/) on the OSF.
+
+

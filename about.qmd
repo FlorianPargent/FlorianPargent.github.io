@@ -1,7 +1,0 @@
----
-title: "Florian Pargent"
-about:
-  template: jolla
----
-
-This is me, Florian Pargent.

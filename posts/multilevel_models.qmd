@@ -1,0 +1,431 @@
+---
+title: "Inference for different quantities of interests in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages"
+author: "Florian Pargent"
+date: 2024-05-20
+format: 
+  html:
+    number-sections: true
+    toc: true
+    df-print: kable
+    code-overflow: scroll
+    code-link: true
+execute:
+  cache: false
+  freeze: true
+categories:
+  - marginaleffects
+  - brms
+  - lme4
+draft: true
+---
+
+:::{.callout-tip}
+# In this post
+
+In the past, I have used the [multcomp](https://cran.r-project.org/web/packages/multcomp/index.html) package to compute inferences for my statistical models in R. However, the [marginaleffects] package seems to be the new kid in town, and I wanted to learn how it works. In this post, I tried to familiarize myself with the **marginaleffects** syntax to compute different statistical estimands for multilevel models fitted with the [lme4](https://cran.r-project.org/web/packages/lme4/index.html) and [brms](https://cran.r-project.org/web/packages/brms/index.html) packages.
+:::
+
+## Simulate data
+
+```{r}
+#| message: false
+library(tidyverse)
+library(lme4)
+library(brms)
+library(marginaleffects)
+```
+
+
+```{r}
+#| message: false
+simulate <- function(n_subjects = 50, n_items = 20,
+  b_0 = 0.847, b_a = 1.253,
+  sd_u0s = 0.5, sd_u0i = 0.5, sd_u1s = 0.5, ...){
+  require(dplyr)
+  require(faux)
+  # simulate design
+  dat <- add_random(subject = n_subjects, item = n_items) %>%
+    mutate(advice_present = rbinom(n(), 1, prob = 2/3)) %>%
+    # add random effects
+    add_ranef("subject", u0s = sd_u0s) %>%#
+    add_ranef("subject", u1s = sd_u1s) %>%
+    add_ranef("item", u0i = sd_u0i) %>%
+    # compute dependent variable
+    mutate(linpred = b_0 + u0i + u0s +
+        (b_a + u1s) * advice_present) %>%
+    mutate(y_prob = plogis(linpred)) %>%
+    mutate(y_bin = rbinom(n = n(), size = 1, prob = y_prob))
+  dat
+}
+
+set.seed(1)
+dat <- simulate(n_subjects = 100, n_items = 50)
+```
+
+## Fit models
+
+```{r}
+#| message: false
+#| warning: false
+f <- y_bin ~ 1 + advice_present +
+  (1 + advice_present |subject) + (1|item)
+
+fit_lme4 <- glmer(f, data = dat, family = "binomial")
+set.seed(1)
+fit_brms <- brm(f, data = dat, family = "bernoulli", 
+  backend = "cmdstanr",
+  chains = 4, cores = 4)
+```
+
+```{r}
+summary(fit_lme4)
+```
+
+```{r}
+summary(fit_brms)
+```
+
+
+## Estimate Contrasts
+
+### Some general options for marginaleffects
+
+::: {.callout-important}
+When using the `datagrid` function in on of the many *marginaleffects* function, be aware that by default all variables not explicitly specified are set to the mean or mode (depending on the variable type). Better check the result of `datagrid` to make sure you know which predictor values your predictions are actually based on.
+:::
+
+::: {.callout-important}
+When using `type = response` in *marginaleffects* for multilevel models fitted with *lme4* or *brms*, this will produce estimates for the conditional expected value of the response $E(Y|x, b)$. 
+:::
+
+::: {.callout-important}
+By default, *marginaleffects* averages the posterior draws of *brms* models using the median. However, we might prefer using the mean to assure that the order of aggregation does not matter. The other two options use the default but are listed here as a reminder that they exist.
+:::
+
+```{r}
+options(marginaleffects_posterior_center = mean)
+options(marginaleffects_posterior_interval = "eti")
+options(marginaleffects_parallel = FALSE)
+```
+
+
+### Treatment effect for an average person and an average item
+
+Estimand:
+
+$$
+\begin{aligned}
+& P(Y = 1 | advice\_present = 1, u_{0s} = 0, u_{1s} = 0, u_{0i} = 0) \\
+& \quad - P(Y = 1 | advice\_present = 0, u_{0s} = 0, u_{1s} = 0, u_{0i} = 0)
+\end{aligned}
+$$
+
+#### lme4
+
+::: {.callout-important}
+The option `re.form = NA` specifies that all random effects are set to 0 when computing predictions. The option `re.form = NULL` specifies that all random effects are always included.
+:::
+
+::: {.panel-tabset group="package1"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_lme4, 
+  variables = list(advice_present = 0:1), 
+  re.form = NA, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_lme4, 
+  variables = "advice_present", 
+  re.form = NA, type = "response")
+```
+
+## Option 3
+
+```{r}
+predictions(fit_lme4,
+  newdata = datagrid(advice_present = 0:1),
+  re.form = NA, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 4
+
+```{r}
+comparisons(fit_lme4,
+  newdata = datagrid(advice_present = 1),
+  re.form = NA, type = "response")
+```
+
+:::
+
+
+#### brms
+
+::: {.callout-important}
+The option `re_formula = NA` specifies that all random effects are set to 0 when computing predictions. The option `re_formula = NULL` specifies that all random effects are always included.
+:::
+
+::: {.panel-tabset group="package1"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_brms, 
+  variables = list(advice_present = 0:1), 
+  re_formula = NA, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_brms, 
+  variables = "advice_present", 
+  re_formula = NA, type = "response")
+```
+
+## Option 3
+
+```{r}
+predictions(fit_brms,
+  newdata = datagrid(advice_present = 0:1),
+  re_formula = NA, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 4
+
+```{r}
+comparisons(fit_brms,
+  newdata = datagrid(advice_present = 1),
+  re_formula = NA, type = "response")
+```
+
+:::
+
+
+### Treatment effect averaged across the actually observed persons and items
+
+Estimand:
+
+$$
+\begin{aligned}
+\frac{1}{S \cdot I} \sum_{s}  \sum_{i} & \quad P(Y = 1 | advice\_present = 1, u_{0s}, u_{1s}, u_{0i}) \\
+& \quad - P(Y = 1 | advice\_present = 0, u_{0s}, u_{1s}, u_{0i})
+\end{aligned}
+$$
+
+#### lme4
+
+::: {.panel-tabset group="package2"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_lme4, 
+  newdata = datagrid(advice_present = 0:1, subject = unique, item = unique),
+  by = "advice_present",
+  re.form = NULL, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_lme4, 
+  variables = "advice_present", 
+  re.form = NULL, type = "response")
+```
+
+:::
+
+
+#### brms
+
+::: {.panel-tabset group="package2"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_brms, 
+  newdata = datagrid(advice_present = 0:1, subject = unique, item = unique),
+  by = "advice_present",
+  re_formula = NULL, type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_brms, 
+  variables = "advice_present", 
+  re_formula = NULL, type = "response")
+```
+
+:::
+
+
+### Treatment effect averaged across new persons and new items
+
+Estimand:
+
+$$
+\begin{aligned}
+\frac{1}{S_{new} \cdot I_{new}} \sum_{s_{new}}  \sum_{i_{new}} & \quad P(Y = 1 | advice\_present = 1, u_{0s_{new}}, u_{1s_{new}}, u_{0i_{new}}) \\
+& \quad - P(Y = 1 | advice\_present = 0, u_{0s_{new}}, u_{1s_{new}}, u_{0i_{new}})
+\end{aligned}
+$$
+
+#### lme4
+
+::: {.callout-warning}
+This cannot actually be done with *lme4*, which cannot sample new subjects or items (at least not with its `predict` function; it would work with the `simulate`function in *lme4*, which cannot be used by the *marginaleffects* package)! The code below produces the same results as the *lme4* estimates for the **Treatment effect for an average person and an average item**!
+:::
+
+::: {.panel-tabset group="package3"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_lme4, 
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = -1:-20),
+  by = "advice_present",
+  re.form = NULL, allow.new.levels = TRUE, 
+  type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_lme4,
+  variables = "advice_present",
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = -1:-20),
+  re.form = NULL, allow.new.levels = TRUE, 
+  type = "response")
+```
+
+:::
+
+
+#### brms
+
+::: {.callout-important}
+The option `sample_new_levels = "gaussian"` specifies that for new factor levels, random effects are drawn from the estimated (multivariate) normal distribution of random effects. Note that this setting is **not the default**! Also note that `allow_new_levels = TRUE` will make the *brms* predictions for new levels **non-deterministic**!
+:::
+
+::: {.callout-warning}
+The following two options produce slightly different results, and I currently do not know why! It might only be randomness introduced by different seeds.
+:::
+
+::: {.panel-tabset group="package3"}
+
+## Option 1
+
+```{r}
+set.seed(1)
+avg_predictions(fit_brms, 
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = -1:-20),
+  by = "advice_present",
+  re_formula = NULL, allow_new_levels = TRUE, sample_new_levels = "gaussian", 
+  type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+set.seed(1)
+avg_comparisons(fit_brms,
+  variables = "advice_present",
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = -1:-20),
+  re_formula = NULL, allow_new_levels = TRUE, sample_new_levels = "gaussian", 
+  type = "response")
+```
+
+:::
+
+### Treatment effect averaged across new persons but the actually observed items
+
+Estimand:
+
+$$
+\begin{aligned}
+\frac{1}{S_{new} \cdot I} \sum_{s_{new}}  \sum_{i} & \quad P(Y = 1 | advice\_present = 1, u_{0s_{new}}, u_{1s_{new}}, u_{0i}) \\
+& \quad - P(Y = 1 | advice\_present = 0, u_{0s_{new}}, u_{1s_{new}}, u_{0i})
+\end{aligned}
+$$
+
+#### lme4
+
+::: {.callout-warning}
+Because *lme4* cannot sample new levels, what it actually does for a new subject is to set all random effects for the subject to 0.
+:::
+
+::: {.panel-tabset group="package4"}
+
+## Option 1
+
+```{r}
+avg_predictions(fit_lme4, 
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = unique),
+  by = "advice_present",
+  re.form = NULL, allow.new.levels = TRUE, 
+  type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+avg_comparisons(fit_lme4,
+  variables = "advice_present",
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = unique),
+  re.form = NULL, allow.new.levels = TRUE, 
+  type = "response")
+```
+
+:::
+
+
+
+#### brms
+
+::: {.callout-warning}
+The following two options produce slightly different results, and I currently do not know why! It might only be randomness introduced by different seeds.
+:::
+
+::: {.panel-tabset group="package4"}
+
+## Option 1
+
+```{r}
+set.seed(1)
+avg_predictions(fit_brms, 
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = unique),
+  by = "advice_present",
+  re_formula = NULL, allow_new_levels = TRUE, sample_new_levels = "gaussian", 
+  type = "response") %>% 
+  hypotheses(hypothesis = c("b2 - b1 = 0"))
+```
+
+## Option 2
+
+```{r}
+set.seed(1)
+avg_comparisons(fit_brms,
+  variables = "advice_present",
+  newdata = datagrid(advice_present = 0:1, subject = -1:-50, item = unique),
+  re_formula = NULL, allow_new_levels = TRUE, sample_new_levels = "gaussian", 
+  type = "response")
+```
+
+:::
+
+

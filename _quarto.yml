@@ -7,10 +7,26 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - href: blog.qmd
+        text: Blog
+      - href: cv.qmd
+        text: CV
+    tools:
+      - icon: github
+        href: https://github.com/FlorianPargent/FlorianPargent.github.io
+  page-navigation: true
+  page-footer:
+    center:
+      - text: florianpargent.github.io
+        href: index.qmd
+    left:
+      - text: Datenschutz
+        href: datenschutz.qmd
+    right:
+      - text: Impressum
+        href: impressum.qmd
 
 format:
   html:
-    theme: cosmo
-    css: styles.css
-    toc: true
+    theme: [pulse, custom.scss] 
+    link-external-newwindow: true
