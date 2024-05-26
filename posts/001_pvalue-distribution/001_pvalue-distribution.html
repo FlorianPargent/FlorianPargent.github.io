@@ -8,9 +8,9 @@
 
 <meta name="author" content="Florian Pargent">
 <meta name="dcterms.date" content="2024-05-19">
-<meta name="description" content="Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true. So I hacked up a small visualization.">
+<meta name="description" content="Some basic visualizations to build intuition on why the p-value is uniformly distributed if the null hypothesis is true.">
 
-<title>Florian Pargent - Intuition on why the p-value is uniformly distributed if the null hypothesis is true</title>
+<title>Florian Pargent - P-value distribution under H0</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -60,22 +60,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-html/quarto.js"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -143,7 +143,7 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">Florian Pargent</span>
     </a>
   </div>
@@ -154,15 +154,15 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
+    <a class="nav-link" href="../../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../blog.html"> 
+    <a class="nav-link" href="../../blog.html"> 
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../cv.html"> 
+    <a class="nav-link" href="../../cv.html"> 
 <span class="menu-text">CV</span></a>
   </li>  
 </ul>
@@ -179,12 +179,12 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
+    <h2 id="toc-title">Table of contents</h2>
    
   <ul>
   <li><a href="#convince-ourselves-that-the-p-value-is-uniformly-distributed-under-the-null-hypothesis" id="toc-convince-ourselves-that-the-p-value-is-uniformly-distributed-under-the-null-hypothesis" class="nav-link active" data-scroll-target="#convince-ourselves-that-the-p-value-is-uniformly-distributed-under-the-null-hypothesis">Convince ourselves that the p-value is uniformly distributed under the null hypothesis</a></li>
-  <li><a href="#build-some-intuition-where-the-uniform-distribution-of-the-p-value-comes-from" id="toc-build-some-intuition-where-the-uniform-distribution-of-the-p-value-comes-from" class="nav-link" data-scroll-target="#build-some-intuition-where-the-uniform-distribution-of-the-p-value-comes-from">Build some intuition where the uniform distribution of the p-value comes from</a></li>
-  <li><a href="#imagined-animation" id="toc-imagined-animation" class="nav-link" data-scroll-target="#imagined-animation">Imagined animation</a></li>
+  <li><a href="#build-some-intuition-where-the-uniform-distribution-of-the-p-value-is-coming-from" id="toc-build-some-intuition-where-the-uniform-distribution-of-the-p-value-is-coming-from" class="nav-link" data-scroll-target="#build-some-intuition-where-the-uniform-distribution-of-the-p-value-is-coming-from">Build some intuition where the uniform distribution of the p-value is coming from</a></li>
+  <li><a href="#imagine-some-animated-version" id="toc-imagine-some-animated-version" class="nav-link" data-scroll-target="#imagine-some-animated-version">Imagine some animated version</a></li>
   </ul>
 </nav>
     </div>
@@ -193,7 +193,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Intuition on why the p-value is uniformly distributed if the null hypothesis is true</h1>
+<h1 class="title">P-value distribution under H0</h1>
   <div class="quarto-categories">
     <div class="quarto-category">p-value</div>
     <div class="quarto-category">statistical literacy</div>
@@ -203,7 +203,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true. So I hacked up a small visualization.
+    Some basic visualizations to build intuition on why the p-value is uniformly distributed if the null hypothesis is true.
   </div>
 </div>
 
@@ -242,14 +242,14 @@ In this post
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true. So I hacked up a small visualization.</p>
+<p>Our students asked us whether there is any good intuition on why the p-value of a hypothesis test has a uniform distribution if the null hypothesis is true. So I hacked up some basic visualizations.</p>
 </div>
 </div>
 <section id="convince-ourselves-that-the-p-value-is-uniformly-distributed-under-the-null-hypothesis" class="level2">
 <h2 class="anchored" data-anchor-id="convince-ourselves-that-the-p-value-is-uniformly-distributed-under-the-null-hypothesis">Convince ourselves that the p-value is uniformly distributed under the null hypothesis</h2>
 <p>First lets think about the quickest way to convince ourselves that the p-value is in fact uniformly distributed:</p>
 <ol type="1">
-<li><p>Assume we have a test statistic, that is t-distributed under <span class="math inline">\(H_0\)</span>. So lets sample same test statistics and plot their distribution:</p>
+<li><p>Assume we have a test statistic, that is t-distributed under <span class="math inline">\(H_0\)</span>. So lets sample some test statistics and plot their distribution:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>t_stat <span class="ot">&lt;-</span> <span class="fu">rt</span>(n, <span class="at">df =</span> <span class="dv">10</span>)</span>
@@ -257,7 +257,7 @@ In this post
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="pvalue_distribution_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="001_pvalue-distribution_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -269,17 +269,17 @@ In this post
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="pvalue_distribution_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="001_pvalue-distribution_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div></li>
 </ol>
 </section>
-<section id="build-some-intuition-where-the-uniform-distribution-of-the-p-value-comes-from" class="level2">
-<h2 class="anchored" data-anchor-id="build-some-intuition-where-the-uniform-distribution-of-the-p-value-comes-from">Build some intuition where the uniform distribution of the p-value comes from</h2>
-<p>To build intuition on why the p-value is uniformly distributed under the null hypothesis, we look at the following graphic <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
-<div class="cell">
+<section id="build-some-intuition-where-the-uniform-distribution-of-the-p-value-is-coming-from" class="level2">
+<h2 class="anchored" data-anchor-id="build-some-intuition-where-the-uniform-distribution-of-the-p-value-is-coming-from">Build some intuition where the uniform distribution of the p-value is coming from</h2>
+<p>To build intuition on why the p-value is uniformly distributed under the null hypothesis, have a look at the following plots <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
+<div class="cell preview-image">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">1</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">1</span>))</span>
@@ -299,14 +299,19 @@ In this post
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="at">side =</span> <span class="dv">1</span>, <span class="at">col.axis =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="pvalue_distribution_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+<div id="fig-quantile-plot" class="quarto-figure quarto-figure-center quarto-float anchored" width="672">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-quantile-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="001_pvalue-distribution_files/figure-html/fig-quantile-plot-1.png" id="fig-quantile-plot" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-quantile-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Per definition, a left-sided p-value computes the ratio of test statistics that would fall below the currently observed value of the test statistic, always assuming <span class="math inline">\(H_0\)</span> is indeed true. On the top left side in we have divided the range of the p-value between 0 and 1 into equal <span style="color:blue;">blue</span> intervals of length 0.05 <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. Per definition, between two blue lines will fall 5% percent of values from the underlying test statistics. To achieve this equal percentage everywhere, the distribution function in the upper plot has to “collect” test statistics from a larger <span style="color:red;">red</span> interval on the bottom axis, when we move away from the mean. Close to the mean, we observe more values of the test statistic (as indicated by the density function in the bottom plot) so the interval that makes up 5% of the whole distribution will be small. Said differently, the p-value stretches the range of the test statistics into equal intervals. This can best be seen with the largest red interval in the bottom left. Because test statistics are so rarely observed so far away from the mean, we have to collect values from a very wide range to collect 5% of values for the test statistic.</p>
+<p>Per definition, a left-sided p-value computes the ratio of test statistics that would fall below the currently observed value of the test statistic (always assuming <span class="math inline">\(H_0\)</span> is indeed true). On the top left side in <a href="#fig-quantile-plot" class="quarto-xref">Figure&nbsp;1</a> we have divided the range of the p-value between 0 and 1 into equal <span style="color:blue;">blue</span> intervals of length 0.05. Per definition, between two blue lines will fall 5% percent of values from the underlying test statistics. To achieve this <em>equal</em> percentage everywhere, the distribution function in the upper plot has to “collect” test statistics from a larger <span style="color:red;">red</span> interval on the bottom axis, when we move away from the mean. Close to the mean, we observe more values of the test statistic (as indicated by the density function in the bottom plot) so the interval that makes up 5% of the whole distribution will be small. In other words, the p-value stretches the range of the test statistics into equal intervals. This can best be seen with the largest red interval in the bottom left. Because test statistics are so rarely observed so far away from the mean, we have to collect values from a very wide range to collect 5% of values for the test statistic.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -331,12 +336,12 @@ Note
 </div>
 </div>
 </section>
-<section id="imagined-animation" class="level2">
-<h2 class="anchored" data-anchor-id="imagined-animation">Imagined animation</h2>
+<section id="imagine-some-animated-version" class="level2">
+<h2 class="anchored" data-anchor-id="imagine-some-animated-version">Imagine some animated version</h2>
 <p>Perhaps at some point I will update the ugly plots and build a small animation:</p>
 <ul>
-<li>Imagine how it would look like to continously sample test statistics at the bottom of the lower plot. Most points would appear close to the middle but, we would also get rare points further outside.</li>
-<li>Imagine that each point would fly upwards within the red corridor until it hits the curve of the distribution function in the upper plot and then fly left in within the corresponding blue corridor.</li>
+<li>Imagine how it would look like to continuously sample test statistics at the bottom of the lower plot. Most points (i.e., observed values of the test statistic) would appear close to the middle but, we would also get rare points further outside.</li>
+<li>Imagine that each point would <em>fly upwards</em> within the <span style="color:red;">red</span> corridor until it hits the curve of the distribution function in the upper plot and then <em>flies left</em> within the corresponding <span style="color:blue;">blue</span> corridor.</li>
 <li>Image that all incoming points are collected on the left side of the upper plot and are used to continuously update a histogram with the blue corridor as bars.</li>
 </ul>
 
@@ -348,19 +353,17 @@ Note
 
 <ol>
 <li id="fn1"><p>I have used <code>df = 1</code> here for pedagogical reasons.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>We could also use fine or coarser grids.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{pargent2024,
   author = {Pargent, Florian},
-  title = {Intuition on Why the p-Value Is Uniformly Distributed If the
-    Null Hypothesis Is True},
+  title = {P-Value Distribution Under {H0}},
   date = {2024-05-19},
-  url = {https://FlorianPargent.github.io//posts/pvalue_distribution.html},
+  url = {https://FlorianPargent.github.io//posts/001_pvalue-distribution/001_pvalue-distribution.html},
   langid = {en}
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-pargent2024" class="csl-entry quarto-appendix-citeas" role="listitem">
-Pargent, Florian. 2024. <span>“Intuition on Why the p-Value Is Uniformly
-Distributed If the Null Hypothesis Is True.”</span> May 19, 2024. <a href="https://FlorianPargent.github.io//posts/pvalue_distribution.html">https://FlorianPargent.github.io//posts/pvalue_distribution.html</a>.
+Pargent, Florian. 2024. <span>“P-Value Distribution Under H0.”</span>
+May 19, 2024. <a href="https://FlorianPargent.github.io//posts/001_pvalue-distribution/001_pvalue-distribution.html">https://FlorianPargent.github.io//posts/001_pvalue-distribution/001_pvalue-distribution.html</a>.
 </div></div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
@@ -782,7 +785,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     <div class="nav-footer-left">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">
-    <a class="nav-link" href="../datenschutz.html">
+    <a class="nav-link" href="../../datenschutz.html">
 <p>Datenschutz</p>
 </a>
   </li>  
@@ -791,7 +794,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     <div class="nav-footer-center">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">
-    <a class="nav-link" href="../index.html">
+    <a class="nav-link" href="../../index.html">
 <p>florianpargent.github.io</p>
 </a>
   </li>  
@@ -800,7 +803,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">
-    <a class="nav-link" href="../impressum.html">
+    <a class="nav-link" href="../../impressum.html">
 <p>Impressum</p>
 </a>
   </li>  
