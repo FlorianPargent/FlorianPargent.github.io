@@ -1,5 +1,6 @@
 ---
-title: "Notes to future Flo"
+title: "Notes For Future Flo"
+subtitle: "A blog from and mostly for Florian Pargent"
 listing:
   contents: posts
   sort: "date desc"
