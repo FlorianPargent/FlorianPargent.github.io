@@ -1,21 +1,14 @@
 ---
 title: "Inference for different quantities of interests in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages"
-author: "Florian Pargent"
 date: 2024-05-20
-format: 
-  html:
-    number-sections: true
-    toc: true
-    df-print: kable
-    code-overflow: scroll
-    code-link: true
-execute:
-  cache: false
-  freeze: true
 categories:
   - marginaleffects
   - brms
   - lme4
+number-sections: true
+df-print: kable
+code-overflow: scroll
+code-link: true
 draft: true
 ---
 

@@ -8,7 +8,7 @@ license: "CC BY"
 
 # Default for table of contents
 toc: true
-# toc-title: Table of contents
+toc-title: Table of contents
 # toc-location: left
 
 # Default knitr options
