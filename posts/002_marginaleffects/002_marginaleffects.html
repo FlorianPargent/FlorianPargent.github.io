@@ -5,8 +5,9 @@
 <meta name="generator" content="quarto-1.4.554">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="Florian Pargent">
-<meta name="dcterms.date" content="2024-05-20">
-<title>Florian Pargent - Inference for different quantities of interests in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages</title>
+<meta name="dcterms.date" content="2024-05-28">
+<meta name="description" content="How to compute predictions and making inferences for different estimands in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages.">
+<title>Florian Pargent - Computing predictions for multilevel models with the marginaleffects package</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -158,11 +159,18 @@ window.Quarto = {
       </div> <!-- /container-fluid -->
     </nav></header><!-- content --><header id="title-block-header" class="quarto-title-block default page-columns page-full"><div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Inference for different quantities of interests in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages</h1>
-                                <div class="quarto-categories">
+      <h1 class="title">Computing predictions for multilevel models with the marginaleffects package</h1>
+                  <div>
+        <div class="description">
+          How to compute predictions and making inferences for different estimands in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages.
+        </div>
+      </div>
+                          <div class="quarto-categories">
                 <div class="quarto-category">marginaleffects</div>
                 <div class="quarto-category">brms</div>
                 <div class="quarto-category">lme4</div>
+                <div class="quarto-category">multilevel model</div>
+                <div class="quarto-category">estimand</div>
               </div>
                   </div>
   </div>
@@ -180,7 +188,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">2024-05-20</p>
+        <p class="date">2024-05-28</p>
       </div>
     </div>
     
@@ -195,12 +203,12 @@ window.Quarto = {
         <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
    
   <ul>
-<li><a href="#simulate-data" id="toc-simulate-data" class="nav-link active" data-scroll-target="#simulate-data"><span class="header-section-number">1</span> Simulate data</a></li>
-  <li><a href="#fit-models" id="toc-fit-models" class="nav-link" data-scroll-target="#fit-models"><span class="header-section-number">2</span> Fit models</a></li>
+<li><a href="#simulate-multilevel-data" id="toc-simulate-multilevel-data" class="nav-link active" data-scroll-target="#simulate-multilevel-data"><span class="header-section-number">1</span> Simulate multilevel data</a></li>
+  <li><a href="#fit-multilevel-models" id="toc-fit-multilevel-models" class="nav-link" data-scroll-target="#fit-multilevel-models"><span class="header-section-number">2</span> Fit multilevel models</a></li>
   <li>
-<a href="#estimate-contrasts" id="toc-estimate-contrasts" class="nav-link" data-scroll-target="#estimate-contrasts"><span class="header-section-number">3</span> Estimate Contrasts</a>
+<a href="#estimate-different-contrasts-with-marginaleffects" id="toc-estimate-different-contrasts-with-marginaleffects" class="nav-link" data-scroll-target="#estimate-different-contrasts-with-marginaleffects"><span class="header-section-number">3</span> Estimate different contrasts with marginaleffects</a>
   <ul class="collapse">
-<li><a href="#some-general-options-for-marginaleffects" id="toc-some-general-options-for-marginaleffects" class="nav-link" data-scroll-target="#some-general-options-for-marginaleffects"><span class="header-section-number">3.1</span> Some general options for marginaleffects</a></li>
+<li><a href="#some-important-function-arguments-and-options-in-marginaleffects" id="toc-some-important-function-arguments-and-options-in-marginaleffects" class="nav-link" data-scroll-target="#some-important-function-arguments-and-options-in-marginaleffects"><span class="header-section-number">3.1</span> Some important function arguments and options in marginaleffects</a></li>
   <li><a href="#treatment-effect-for-an-average-person-and-an-average-item" id="toc-treatment-effect-for-an-average-person-and-an-average-item" class="nav-link" data-scroll-target="#treatment-effect-for-an-average-person-and-an-average-item"><span class="header-section-number">3.2</span> Treatment effect for an average person and an average item</a></li>
   <li><a href="#treatment-effect-averaged-across-the-actually-observed-persons-and-items" id="toc-treatment-effect-averaged-across-the-actually-observed-persons-and-items" class="nav-link" data-scroll-target="#treatment-effect-averaged-across-the-actually-observed-persons-and-items"><span class="header-section-number">3.3</span> Treatment effect averaged across the actually observed persons and items</a></li>
   <li><a href="#treatment-effect-averaged-across-new-persons-and-new-items" id="toc-treatment-effect-averaged-across-new-persons-and-new-items" class="nav-link" data-scroll-target="#treatment-effect-averaged-across-new-persons-and-new-items"><span class="header-section-number">3.4</span> Treatment effect averaged across new persons and new items</a></li>
@@ -220,20 +228,21 @@ In this post
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In the past, I have used the <a href="https://cran.r-project.org/web/packages/multcomp/index.html">multcomp</a> package to compute inferences for my statistical models in R. However, the [marginaleffects] package seems to be the new kid in town, and I wanted to learn how it works. In this post, I tried to familiarize myself with the <strong>marginaleffects</strong> syntax to compute different statistical estimands for multilevel models fitted with the <a href="https://cran.r-project.org/web/packages/lme4/index.html">lme4</a> and <a href="https://cran.r-project.org/web/packages/brms/index.html">brms</a> packages.</p>
+<p>In the past, I have used the <a href="https://cran.r-project.org/web/packages/multcomp/index.html">multcomp</a> package to compute inferences for my statistical models in R. However, the <a href="https://cran.r-project.org/web/packages/marginaleffects/index.html">marginaleffects</a> package seems to be the new kid in town, and I wanted to learn how it works. In this post, I tried to familiarize myself with the <em>marginaleffects</em> syntax to compute different statistical estimands for multilevel models fitted with the <a href="https://cran.r-project.org/web/packages/lme4/index.html">lme4</a> and <a href="https://cran.r-project.org/web/packages/brms/index.html">brms</a> packages.</p>
 </div>
 </div>
-<section id="simulate-data" class="level2" data-number="1"><h2 data-number="1" class="anchored" data-anchor-id="simulate-data">
-<span class="header-section-number">1</span> Simulate data</h2>
 <div class="cell">
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lme4/lme4/">lme4</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/paul-buerkner/brms">brms</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://marginaleffects.com/">marginaleffects</a></span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<section id="simulate-multilevel-data" class="level2" data-number="1"><h2 data-number="1" class="anchored" data-anchor-id="simulate-multilevel-data">
+<span class="header-section-number">1</span> Simulate multilevel data</h2>
+<p>I will use simulated data from a <em>Generalized Linear Mixed Model</em> (GLMM) in this post. The simulation code was inspired by the <a href="https://debruine.github.io/faux/articles/sim_mixed.html#simulating-data">online documentation of the faux R package</a>. For this example, imagine that <code>n_subjects</code> subjects respond to <code>n_items</code> stimuli in a diagnostic decision task. The binary response variable <code>y_bin</code> reflects whether the diagnostic decision is correct or not. For some trials, the participants are presented with advice (<code>advice_present</code> = 1) that should help them making the correct diagnostic decision.</p>
 <div class="cell">
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">simulate</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_subjects</span> <span class="op">=</span> <span class="fl">50</span>, <span class="va">n_items</span> <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  <span class="va">b_0</span> <span class="op">=</span> <span class="fl">0.847</span>, <span class="va">b_a</span> <span class="op">=</span> <span class="fl">1.253</span>,</span>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">simulate</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_subjects</span> <span class="op">=</span> <span class="fl">100</span>, <span class="va">n_items</span> <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  <span class="va">b_0</span> <span class="op">=</span> <span class="fl">0.8</span>, <span class="va">b_a</span> <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  <span class="va">sd_u0s</span> <span class="op">=</span> <span class="fl">0.5</span>, <span class="va">sd_u0i</span> <span class="op">=</span> <span class="fl">0.5</span>, <span class="va">sd_u1s</span> <span class="op">=</span> <span class="fl">0.5</span>, <span class="va">...</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="va"><a href="https://github.com/debruine/faux">faux</a></span><span class="op">)</span></span>
@@ -253,13 +262,14 @@ In this post
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html">simulate</a></span><span class="op">(</span>n_subjects <span class="op">=</span> <span class="fl">100</span>, n_items <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html">simulate</a></span><span class="op">(</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section><section id="fit-models" class="level2" data-number="2"><h2 data-number="2" class="anchored" data-anchor-id="fit-models">
-<span class="header-section-number">2</span> Fit models</h2>
+</section><section id="fit-multilevel-models" class="level2" data-number="2"><h2 data-number="2" class="anchored" data-anchor-id="fit-multilevel-models">
+<span class="header-section-number">2</span> Fit multilevel models</h2>
+<p>I will fit a multilevel model with both the <em>lme4</em> and the <em>brms</em> package. The specified model is equal to the <em>true</em> model from which the data have been simulated.</p>
 <div class="cell">
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">f</span> <span class="op">&lt;-</span> <span class="va">y_bin</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">advice_present</span> <span class="op">+</span></span>
-<span>  <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">advice_present</span> <span class="op">|</span><span class="va">subject</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">item</span><span class="op">)</span></span>
+<span>  <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">advice_present</span> <span class="op">||</span> <span class="va">subject</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">item</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_lme4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/glmer.html">glmer</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">dat</span>, family <span class="op">=</span> <span class="st">"binomial"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
@@ -278,93 +288,93 @@ Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup)
 Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-Chain 2 finished in 12.3 seconds.
-Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-Chain 3 finished in 12.9 seconds.
-Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-Chain 4 finished in 13.1 seconds.
+Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
 Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+Chain 2 finished in 35.7 seconds.
+Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
+Chain 3 finished in 35.8 seconds.
 Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+Chain 4 finished in 37.4 seconds.
 Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
-Chain 1 finished in 16.0 seconds.
+Chain 1 finished in 38.2 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 13.6 seconds.
-Total execution time: 16.1 seconds.</code></pre>
+Mean chain execution time: 36.8 seconds.
+Total execution time: 38.3 seconds.</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -373,34 +383,34 @@ Total execution time: 16.1 seconds.</code></pre>
 <pre><code>Generalized linear mixed model fit by maximum likelihood (Laplace
   Approximation) [glmerMod]
  Family: binomial  ( logit )
-Formula: y_bin ~ 1 + advice_present + (1 + advice_present | subject) +  
+Formula: y_bin ~ 1 + advice_present + (1 + advice_present || subject) +  
     (1 | item)
    Data: dat
 
      AIC      BIC   logLik deviance df.resid 
-  4588.1   4627.2  -2288.1   4576.1     4994 
+  4997.9   5030.5  -2494.0   4987.9     4995 
 
 Scaled residuals: 
     Min      1Q  Median      3Q     Max 
--5.5007  0.2487  0.3611  0.4913  1.4209 
+-5.4937  0.2292  0.3969  0.5510  1.4685 
 
 Random effects:
- Groups  Name           Variance Std.Dev. Corr 
- subject (Intercept)    0.2378   0.4876        
-         advice_present 0.3056   0.5528   -0.42
- item    (Intercept)    0.1960   0.4427        
+ Groups    Name           Variance Std.Dev.
+ subject   (Intercept)    0.2173   0.4661  
+ subject.1 advice_present 0.2519   0.5018  
+ item      (Intercept)    0.1949   0.4415  
 Number of obs: 5000, groups:  subject, 100; item, 50
 
 Fixed effects:
                Estimate Std. Error z value Pr(&gt;|z|)    
-(Intercept)     0.82329    0.09742   8.451   &lt;2e-16 ***
-advice_present  1.23275    0.09780  12.605   &lt;2e-16 ***
+(Intercept)     0.75270    0.09540    7.89 3.03e-15 ***
+advice_present  1.02600    0.09085   11.29  &lt; 2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Correlation of Fixed Effects:
             (Intr)
-advic_prsnt -0.447</code></pre>
+advic_prsnt -0.339</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -408,7 +418,7 @@ advic_prsnt -0.447</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: bernoulli 
   Links: mu = logit 
-Formula: y_bin ~ 1 + advice_present + (1 + advice_present | subject) + (1 | item) 
+Formula: y_bin ~ 1 + advice_present + (1 + advice_present || subject) + (1 | item) 
    Data: dat (Number of observations: 5000) 
   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
          total post-warmup draws = 4000
@@ -416,32 +426,29 @@ Formula: y_bin ~ 1 + advice_present + (1 + advice_present | subject) + (1 | item
 Multilevel Hyperparameters:
 ~item (Number of levels: 50) 
               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sd(Intercept)     0.47      0.07     0.35     0.61 1.00     1138     1741
+sd(Intercept)     0.46      0.06     0.35     0.60 1.00     1318     1884
 
 ~subject (Number of levels: 100) 
-                              Estimate Est.Error l-95% CI u-95% CI Rhat
-sd(Intercept)                     0.49      0.09     0.32     0.67 1.01
-sd(advice_present)                0.54      0.15     0.21     0.79 1.02
-cor(Intercept,advice_present)    -0.32      0.27    -0.70     0.40 1.02
-                              Bulk_ESS Tail_ESS
-sd(Intercept)                      910     1949
-sd(advice_present)                 249      157
-cor(Intercept,advice_present)      455      279
+                   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)          0.48      0.07     0.36     0.62 1.01     1248     2241
+sd(advice_present)     0.53      0.10     0.33     0.72 1.00      899     1800
 
 Regression Coefficients:
                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept          0.82      0.10     0.62     1.02 1.00     1468     2040
-advice_present     1.24      0.10     1.04     1.44 1.00     2624     2781
+Intercept          0.75      0.10     0.56     0.94 1.00     1682     2416
+advice_present     1.03      0.10     0.85     1.23 1.00     2441     2573
 
 Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
 scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
-</section><section id="estimate-contrasts" class="level2" data-number="3"><h2 data-number="3" class="anchored" data-anchor-id="estimate-contrasts">
-<span class="header-section-number">3</span> Estimate Contrasts</h2>
-<section id="some-general-options-for-marginaleffects" class="level3" data-number="3.1"><h3 data-number="3.1" class="anchored" data-anchor-id="some-general-options-for-marginaleffects">
-<span class="header-section-number">3.1</span> Some general options for marginaleffects</h3>
+<p>When looking at the model outputs, we can see that both models have very similar parameter estimates, and parameter estimates closely match the true values we specified in the simulation. The diagnostics of the brms model (Rhats &lt; 0, decent ESS, and no divergent transitions) suggest that the model is identified and has successfully converged, which is what we expect when fitting the <em>true</em> model to a large enough sample.</p>
+</section><section id="estimate-different-contrasts-with-marginaleffects" class="level2" data-number="3"><h2 data-number="3" class="anchored" data-anchor-id="estimate-different-contrasts-with-marginaleffects">
+<span class="header-section-number">3</span> Estimate different contrasts with marginaleffects</h2>
+<p>In the following sections, I compute predictions from these models with the <em>marginaleffects</em> package and estimate contrasts for different estimands. There are usually several different ways how to compute the same estimates with <em>marginaleffects</em>, and I will convince myself that they produce similar results. Great resources on these topics are the <a href="https://marginaleffects.com/vignettes/brms.html#random-effects-model">documentation of the marginaleffects package</a>, as well as the excellent blog-posts (<a href="https://www.andrewheiss.com/blog/2022/05/20/marginalia/">1</a>, <a href="https://www.andrewheiss.com/blog/2022/11/29/conditional-marginal-marginaleffects/">2</a>, <a href="https://www.andrewheiss.com/blog/2023/08/12/conjoint-multilevel-multinomial-guide/">3</a>) by <a href="https://www.andrewheiss.com/">Andrew Heiss</a>.</p>
+<section id="some-important-function-arguments-and-options-in-marginaleffects" class="level3" data-number="3.1"><h3 data-number="3.1" class="anchored" data-anchor-id="some-important-function-arguments-and-options-in-marginaleffects">
+<span class="header-section-number">3.1</span> Some important function arguments and options in marginaleffects</h3>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -452,20 +459,7 @@ Important
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>When using the <code>datagrid</code> function in on of the many <em>marginaleffects</em> function, be aware that by default all variables not explicitly specified are set to the mean or mode (depending on the variable type). Better check the result of <code>datagrid</code> to make sure you know which predictor values your predictions are actually based on.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>When using <code>type = response</code> in <em>marginaleffects</em> for multilevel models fitted with <em>lme4</em> or <em>brms</em>, this will produce estimates for the conditional expected value of the response <span class="math inline">\(E(Y|x, b)\)</span>.</p>
+<p>When using the <code>datagrid</code> function inside one of the many <em>marginaleffects</em> functions, be aware that by default <strong>all variables not explicitly specified are set to the mean or mode</strong> (depending on the variable type). Better check the result of <code>datagrid</code> to make sure you know which predictor values your predictions are actually based on!</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
@@ -478,17 +472,30 @@ Important
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>By default, <em>marginaleffects</em> averages the posterior draws of <em>brms</em> models using the median. However, we might prefer using the mean to assure that the order of aggregation does not matter. The other two options use the default but are listed here as a reminder that they exist.</p>
+<p>When using <code>type = response</code> in <em>marginaleffects</em> for multilevel models fitted with <em>lme4</em> or <em>brms</em>, this will produce estimates for the conditional expected value of the response <span class="math inline">\(E(Y|x, u)\)</span> (and does <em>not</em> simulate individual response values from the posterior predictive distribution).</p>
 </div>
 </div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>By default, <em>marginaleffects</em> averages the posterior draws of <em>brms</em> models using the median. However, we might prefer using the mean to assure that the order of aggregation does not matter.</p>
 <div class="cell">
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html">options</a></span><span class="op">(</span>marginaleffects_posterior_center <span class="op">=</span> <span class="va">mean</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html">options</a></span><span class="op">(</span>marginaleffects_posterior_interval <span class="op">=</span> <span class="st">"eti"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html">options</a></span><span class="op">(</span>marginaleffects_parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html">options</a></span><span class="op">(</span>marginaleffects_posterior_interval <span class="op">=</span> <span class="st">"eti"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The other option specifies the type of posterior intervals (equal-tailed intervals vs.&nbsp;highest density intervals). We use the default <code>"eti"</code> but list this option here as a reminder that it exist.</p>
+</div>
 </div>
 </section><section id="treatment-effect-for-an-average-person-and-an-average-item" class="level3" data-number="3.2"><h3 data-number="3.2" class="anchored" data-anchor-id="treatment-effect-for-an-average-person-and-an-average-item">
 <span class="header-section-number">3.2</span> Treatment effect for an average person and an average item</h3>
-<p>Estimand:</p>
+<p><strong>Estimand:</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
 &amp; P(Y = 1 | advice\_present = 1, u_{0s} = 0, u_{1s} = 0, u_{0i} = 0) \\
@@ -527,7 +534,7 @@ Important
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
- b2-b1=0    0.192     0.0176 10.9   &lt;0.001 89.2 0.157  0.226
+ b2-b1=0    0.176     0.0166 10.6   &lt;0.001 84.8 0.143  0.208
 
 Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 Type:  response </code></pre>
@@ -542,9 +549,9 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 %
- advice_present mean(1) - mean(0)    0.192     0.0176 10.9   &lt;0.001 89.2 0.157
+ advice_present mean(1) - mean(0)    0.176     0.0166 10.6   &lt;0.001 84.8 0.143
  97.5 %
-  0.226
+  0.208
 
 Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 Type:  response </code></pre>
@@ -560,7 +567,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
- b2-b1=0    0.192     0.0176 10.9   &lt;0.001 89.2 0.157  0.226
+ b2-b1=0    0.176     0.0166 10.6   &lt;0.001 84.8 0.143  0.208
 
 Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 Type:  response </code></pre>
@@ -575,9 +582,9 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term Contrast advice_present Estimate Std. Error    z Pr(&gt;|z|)    S
- advice_present    1 - 0              1    0.192     0.0176 10.9   &lt;0.001 89.2
+ advice_present    1 - 0              1    0.176     0.0166 10.6   &lt;0.001 84.8
  2.5 % 97.5 %    subject   item
- 0.157  0.226 subject001 item01
+ 0.143  0.208 subject001 item01
 
 Columns: rowid, term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, advice_present, predicted_lo, predicted_hi, predicted, subject, item, y_bin 
 Type:  response </code></pre>
@@ -618,7 +625,7 @@ Important
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate 2.5 % 97.5 %
- b2-b1=0    0.193 0.159  0.228
+ b2-b1=0    0.177 0.144   0.21
 
 Columns: term, estimate, conf.low, conf.high 
 Type:  response </code></pre>
@@ -633,7 +640,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate 2.5 % 97.5 %
- advice_present mean(1) - mean(0)    0.193 0.159  0.228
+ advice_present mean(1) - mean(0)    0.177 0.144   0.21
 
 Columns: term, contrast, estimate, conf.low, conf.high, predicted_lo, predicted_hi, predicted, tmp_idx 
 Type:  response </code></pre>
@@ -649,7 +656,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate 2.5 % 97.5 %
- b2-b1=0    0.193 0.159  0.228
+ b2-b1=0    0.177 0.144   0.21
 
 Columns: term, estimate, conf.low, conf.high 
 Type:  response </code></pre>
@@ -664,7 +671,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term Contrast advice_present Estimate 2.5 % 97.5 %    subject   item
- advice_present    1 - 0              1    0.193 0.159  0.228 subject001 item01
+ advice_present    1 - 0              1    0.177 0.144   0.21 subject001 item01
 
 Columns: rowid, term, contrast, estimate, conf.low, conf.high, advice_present, predicted_lo, predicted_hi, predicted, tmp_idx, subject, item, y_bin 
 Type:  response </code></pre>
@@ -675,7 +682,7 @@ Type:  response </code></pre>
 </div>
 </section></section><section id="treatment-effect-averaged-across-the-actually-observed-persons-and-items" class="level3" data-number="3.3"><h3 data-number="3.3" class="anchored" data-anchor-id="treatment-effect-averaged-across-the-actually-observed-persons-and-items">
 <span class="header-section-number">3.3</span> Treatment effect averaged across the actually observed persons and items</h3>
-<p>Estimand:</p>
+<p><strong>Estimand:</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
 \frac{1}{S \cdot I} \sum_{s}  \sum_{i} &amp; \quad P(Y = 1 | advice\_present = 1, u_{0s}, u_{1s}, u_{0i}) \\
@@ -711,7 +718,7 @@ Warning: For this model type, `marginaleffects` only takes into account the
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
- b2-b1=0    0.191     0.0172 11.1   &lt;0.001 92.5 0.157  0.225
+ b2-b1=0    0.167     0.0162 10.3   &lt;0.001 80.1 0.135  0.199
 
 Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 Type:  response </code></pre>
@@ -731,9 +738,9 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 %
- advice_present mean(1) - mean(0)    0.191     0.0172 11.1   &lt;0.001 92.5 0.157
+ advice_present mean(1) - mean(0)    0.167     0.0162 10.3   &lt;0.001 80.1 0.135
  97.5 %
-  0.225
+  0.199
 
 Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 Type:  response </code></pre>
@@ -760,7 +767,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate 2.5 % 97.5 %
- b2-b1=0    0.188 0.163  0.212
+ b2-b1=0    0.164 0.139   0.19
 
 Columns: term, estimate, conf.low, conf.high 
 Type:  response </code></pre>
@@ -775,7 +782,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate 2.5 % 97.5 %
- advice_present mean(1) - mean(0)    0.188 0.163  0.212
+ advice_present mean(1) - mean(0)    0.164 0.139   0.19
 
 Columns: term, contrast, estimate, conf.low, conf.high, predicted_lo, predicted_hi, predicted, tmp_idx 
 Type:  response </code></pre>
@@ -786,7 +793,7 @@ Type:  response </code></pre>
 </div>
 </section></section><section id="treatment-effect-averaged-across-new-persons-and-new-items" class="level3" data-number="3.4"><h3 data-number="3.4" class="anchored" data-anchor-id="treatment-effect-averaged-across-new-persons-and-new-items">
 <span class="header-section-number">3.4</span> Treatment effect averaged across new persons and new items</h3>
-<p>Estimand:</p>
+<p><strong>Estimand:</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
 \frac{1}{S_{new} \cdot I_{new}} \sum_{s_{new}}  \sum_{i_{new}} &amp; \quad P(Y = 1 | advice\_present = 1, u_{0s_{new}}, u_{1s_{new}}, u_{0i_{new}}) \\
@@ -836,7 +843,7 @@ Warning: For this model type, `marginaleffects` only takes into account the
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
- b2-b1=0    0.192     0.0176 10.9   &lt;0.001 89.2 0.157  0.226
+ b2-b1=0    0.176     0.0166 10.6   &lt;0.001 84.8 0.143  0.208
 
 Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 Type:  response </code></pre>
@@ -858,9 +865,9 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 %
- advice_present mean(1) - mean(0)    0.192     0.0176 10.9   &lt;0.001 89.2 0.157
+ advice_present mean(1) - mean(0)    0.176     0.0166 10.6   &lt;0.001 84.8 0.143
  97.5 %
-  0.226
+  0.208
 
 Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 Type:  response </code></pre>
@@ -915,7 +922,7 @@ Warning
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate 2.5 % 97.5 %
- b2-b1=0    0.187 0.144  0.233
+ b2-b1=0    0.162 0.121  0.203
 
 Columns: term, estimate, conf.low, conf.high 
 Type:  response </code></pre>
@@ -933,7 +940,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate 2.5 % 97.5 %
- advice_present mean(1) - mean(0)    0.188 0.145  0.235
+ advice_present mean(1) - mean(0)    0.163 0.122  0.203
 
 Columns: term, contrast, estimate, conf.low, conf.high, predicted_lo, predicted_hi, predicted, tmp_idx 
 Type:  response </code></pre>
@@ -944,7 +951,7 @@ Type:  response </code></pre>
 </div>
 </section></section><section id="treatment-effect-averaged-across-new-persons-but-the-actually-observed-items" class="level3" data-number="3.5"><h3 data-number="3.5" class="anchored" data-anchor-id="treatment-effect-averaged-across-new-persons-but-the-actually-observed-items">
 <span class="header-section-number">3.5</span> Treatment effect averaged across new persons but the actually observed items</h3>
-<p>Estimand:</p>
+<p><strong>Estimand:</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
 \frac{1}{S_{new} \cdot I} \sum_{s_{new}}  \sum_{i} &amp; \quad P(Y = 1 | advice\_present = 1, u_{0s_{new}}, u_{1s_{new}}, u_{0i}) \\
@@ -994,7 +1001,7 @@ Warning: For this model type, `marginaleffects` only takes into account the
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
- b2-b1=0    0.194     0.0174 11.1   &lt;0.001 93.5  0.16  0.229
+ b2-b1=0    0.177     0.0164 10.8   &lt;0.001 87.7 0.145  0.209
 
 Columns: term, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high 
 Type:  response </code></pre>
@@ -1016,9 +1023,9 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 %
- advice_present mean(1) - mean(0)    0.194     0.0174 11.1   &lt;0.001 93.5  0.16
+ advice_present mean(1) - mean(0)    0.177     0.0164 10.8   &lt;0.001 87.7 0.145
  97.5 %
-  0.229
+  0.209
 
 Columns: term, contrast, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, predicted_lo, predicted_hi, predicted 
 Type:  response </code></pre>
@@ -1060,7 +1067,7 @@ Warning
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Term Estimate 2.5 % 97.5 %
- b2-b1=0    0.188 0.148  0.227
+ b2-b1=0    0.163 0.126  0.199
 
 Columns: term, estimate, conf.low, conf.high 
 Type:  response </code></pre>
@@ -1078,7 +1085,7 @@ Type:  response </code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>
            Term          Contrast Estimate 2.5 % 97.5 %
- advice_present mean(1) - mean(0)    0.188 0.149  0.229
+ advice_present mean(1) - mean(0)    0.163 0.125  0.198
 
 Columns: term, contrast, estimate, conf.low, conf.high, predicted_lo, predicted_hi, predicted, tmp_idx 
 Type:  response </code></pre>
@@ -1091,17 +1098,15 @@ Type:  response </code></pre>
 
 </section></section></section><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{pargent2024,
   author = {Pargent, Florian},
-  title = {Inference for Different Quantities of Interests in
-    {Generalized} {Linear} {Mixed} {Models,} Using the Lme4, Brms, and
-    Marginaleffects {R} Packages},
-  date = {2024-05-20},
+  title = {Computing Predictions for Multilevel Models with the
+    Marginaleffects Package},
+  date = {2024-05-28},
   url = {https://FlorianPargent.github.io//posts/002_marginaleffects/002_marginaleffects.html},
   langid = {en}
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-pargent2024" class="csl-entry quarto-appendix-citeas" role="listitem">
-Pargent, Florian. 2024. <span>“Inference for Different Quantities of
-Interests in Generalized Linear Mixed Models, Using the Lme4, Brms, and
-Marginaleffects R Packages.”</span> May 20, 2024. <a href="https://FlorianPargent.github.io//posts/002_marginaleffects/002_marginaleffects.html">https://FlorianPargent.github.io//posts/002_marginaleffects/002_marginaleffects.html</a>.
+Pargent, Florian. 2024. <span>“Computing Predictions for Multilevel
+Models with the Marginaleffects Package.”</span> May 28, 2024. <a href="https://FlorianPargent.github.io//posts/002_marginaleffects/002_marginaleffects.html">https://FlorianPargent.github.io//posts/002_marginaleffects/002_marginaleffects.html</a>.
 </div></div></section></div></main><!-- /main --><script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
