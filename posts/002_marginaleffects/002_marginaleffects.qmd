@@ -1,38 +1,46 @@
 ---
-title: "Inference for different quantities of interests in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages"
-date: 2024-05-20
-categories:
-  - marginaleffects
-  - brms
-  - lme4
+title: "Computing predictions for multilevel models with the marginaleffects package"
+description: "How to compute predictions and making inferences for different estimands in Generalized Linear Mixed Models, using the lme4, brms, and marginaleffects R packages."
+date: 2024-05-28
+categories: ["marginaleffects", "brms", "lme4", "multilevel model", "estimand"]
 number-sections: true
 df-print: kable
 code-overflow: scroll
 code-link: true
-draft: true
 ---
 
 :::{.callout-tip}
 # In this post
 
-In the past, I have used the [multcomp](https://cran.r-project.org/web/packages/multcomp/index.html) package to compute inferences for my statistical models in R. However, the [marginaleffects] package seems to be the new kid in town, and I wanted to learn how it works. In this post, I tried to familiarize myself with the **marginaleffects** syntax to compute different statistical estimands for multilevel models fitted with the [lme4](https://cran.r-project.org/web/packages/lme4/index.html) and [brms](https://cran.r-project.org/web/packages/brms/index.html) packages.
+In the past, I have used the [multcomp](https://cran.r-project.org/web/packages/multcomp/index.html) package to compute inferences for my statistical models in R. However, the [marginaleffects](https://cran.r-project.org/web/packages/marginaleffects/index.html) package seems to be the new kid in town, and I wanted to learn how it works. In this post, I tried to familiarize myself with the *marginaleffects* syntax to compute different statistical estimands for multilevel models fitted with the [lme4](https://cran.r-project.org/web/packages/lme4/index.html) and [brms](https://cran.r-project.org/web/packages/brms/index.html) packages.
 :::
 
-## Simulate data
+```{r}
+#| label: setup
+#| include: false
+renv::use(lockfile = "renv.lock")
+#library(cmdstanr) # ensure cmdstanr is added to renv.lock
+#library(collapse) # ensure collapse is added to renv.lock
+```
 
 ```{r}
 #| message: false
+#| warning: false
 library(tidyverse)
 library(lme4)
 library(brms)
 library(marginaleffects)
 ```
 
+## Simulate multilevel data
+
+I will use simulated data from a *Generalized Linear Mixed Model* (GLMM) in this post. The simulation code was inspired by the [online documentation of the faux R package](https://debruine.github.io/faux/articles/sim_mixed.html#simulating-data).
+For this example, imagine that `n_subjects` subjects respond to `n_items` stimuli in a diagnostic decision task. The binary response variable `y_bin` reflects whether the diagnostic decision is correct or not. For some trials, the participants are presented with advice (`advice_present` = 1) that should help them making the correct diagnostic decision.
 
 ```{r}
 #| message: false
-simulate <- function(n_subjects = 50, n_items = 20,
-  b_0 = 0.847, b_a = 1.253,
+simulate <- function(n_subjects = 100, n_items = 50,
+  b_0 = 0.8, b_a = 1,
   sd_u0s = 0.5, sd_u0i = 0.5, sd_u1s = 0.5, ...){
   require(dplyr)
   require(faux)
@@ -52,16 +60,19 @@ simulate <- function(n_subjects = 50, n_items = 20,
 }
 
 set.seed(1)
-dat <- simulate(n_subjects = 100, n_items = 50)
+dat <- simulate()
 ```
 
-## Fit models
+## Fit multilevel models
+
+I will fit a multilevel model with both the *lme4* and the *brms* package.
+The specified model is equal to the *true* model from which the data have been simulated.
 
 ```{r}
 #| message: false
 #| warning: false
 f <- y_bin ~ 1 + advice_present +
-  (1 + advice_present |subject) + (1|item)
+  (1 + advice_present || subject) + (1|item)
 
 fit_lme4 <- glmer(f, data = dat, family = "binomial")
 set.seed(1)
@@ -78,33 +89,37 @@ summary(fit_lme4)
 summary(fit_brms)
 ```
 
+When looking at the model outputs, we can see that both models have very similar parameter estimates, and parameter estimates closely match the true values we specified in the simulation. The diagnostics of the brms model (Rhats < 0, decent ESS, and no divergent transitions) suggest that the model is identified and has successfully converged, which is what we expect when fitting the *true* model to a large enough sample.
 
-## Estimate Contrasts
+## Estimate different contrasts with marginaleffects
 
-### Some general options for marginaleffects
+In the following sections, I compute predictions from these models with the *marginaleffects* package and estimate contrasts for different estimands. There are usually several different ways how to compute the same estimates with *marginaleffects*, and I will convince myself that they produce similar results. Great resources on these topics are the [documentation of the marginaleffects package](https://marginaleffects.com/vignettes/brms.html#random-effects-model), as well as the excellent blog-posts ([1](https://www.andrewheiss.com/blog/2022/05/20/marginalia/), [2](https://www.andrewheiss.com/blog/2022/11/29/conditional-marginal-marginaleffects/), [3](https://www.andrewheiss.com/blog/2023/08/12/conjoint-multilevel-multinomial-guide/)) by [Andrew Heiss](https://www.andrewheiss.com/).
+
+### Some important function arguments and options in marginaleffects
 
 ::: {.callout-important}
-When using the `datagrid` function in on of the many *marginaleffects* function, be aware that by default all variables not explicitly specified are set to the mean or mode (depending on the variable type). Better check the result of `datagrid` to make sure you know which predictor values your predictions are actually based on.
+When using the `datagrid` function inside one of the many *marginaleffects* functions, be aware that by default **all variables not explicitly specified are set to the mean or mode** (depending on the variable type). Better check the result of `datagrid` to make sure you know which predictor values your predictions are actually based on!
 :::
 
 ::: {.callout-important}
-When using `type = response` in *marginaleffects* for multilevel models fitted with *lme4* or *brms*, this will produce estimates for the conditional expected value of the response $E(Y|x, b)$. 
+When using `type = response` in *marginaleffects* for multilevel models fitted with *lme4* or *brms*, this will produce estimates for the conditional expected value of the response $E(Y|x, u)$ (and does *not* simulate individual response values from the posterior predictive distribution). 
 :::
 
 ::: {.callout-important}
-By default, *marginaleffects* averages the posterior draws of *brms* models using the median. However, we might prefer using the mean to assure that the order of aggregation does not matter. The other two options use the default but are listed here as a reminder that they exist.
-:::
-
+By default, *marginaleffects* averages the posterior draws of *brms* models using the median. However, we might prefer using the mean to assure that the order of aggregation does not matter.
 ```{r}
 options(marginaleffects_posterior_center = mean)
 options(marginaleffects_posterior_interval = "eti")
-options(marginaleffects_parallel = FALSE)
 ```
+The other option specifies the type of posterior intervals (equal-tailed intervals vs. highest density intervals). We use the default `"eti"` but list this option here as a reminder that it exist.
+:::
+
+
 
 
 ### Treatment effect for an average person and an average item
 
-Estimand:
+**Estimand:**
 
 $$
 \begin{aligned}
@@ -205,7 +220,7 @@ comparisons(fit_brms,
 
 ### Treatment effect averaged across the actually observed persons and items
 
-Estimand:
+**Estimand:**
 
 $$
 \begin{aligned}
@@ -266,7 +281,7 @@ avg_comparisons(fit_brms,
 
 ### Treatment effect averaged across new persons and new items
 
-Estimand:
+**Estimand:**
 
 $$
 \begin{aligned}
@@ -346,7 +361,7 @@ avg_comparisons(fit_brms,
 
 ### Treatment effect averaged across new persons but the actually observed items
 
-Estimand:
+**Estimand:**
 
 $$
 \begin{aligned}
