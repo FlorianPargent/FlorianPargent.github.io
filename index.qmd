@@ -25,6 +25,7 @@ My main **research interests** lie in the following areas:
 - (Bayesian) Item Response Theory
 - (Bayesian) Decision Theory
 - Predictive Modeling and Machine Learning
+- Causal Inference
 - Questionnaire Development
 - Response Styles in Questionnaires
 - Applied Research
