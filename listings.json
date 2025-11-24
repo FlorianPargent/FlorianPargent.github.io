@@ -2,6 +2,7 @@
   {
     "listing": "/blog.html",
     "items": [
+      "/posts/003_mi-response_to_100_ci/003_mi-response_to_100_ci.html",
       "/posts/002_marginaleffects/002_marginaleffects.html",
       "/posts/001_pvalue-distribution/001_pvalue-distribution.html"
     ]
